@@ -46,7 +46,7 @@ def isfloat(value):
         return False
 
 
-def stripLine(line, index, inputParameters):
+def stripLine(line, index, params):
     arr = []
     res = line[index].strip(":\n").split(": ")
 
@@ -56,13 +56,13 @@ def stripLine(line, index, inputParameters):
     if len(res) > 1:
         key = res[0]
         value = res[1]
-        if res[0] in inputParameters.keys():
-            key = inputParameters[res[0]]
+        if res[0] in params.keys():
+            key = params[res[0]]
         index += 1
     else:
 
-        if res[0] in inputParameters.keys():
-            key = inputParameters[res[0]]
+        if res[0] in params.keys():
+            key = params[res[0]]
         else:
             key = res[0]
 
@@ -101,14 +101,13 @@ def findStartLocation(data):
     return location
 
 
-def readMEDPC(filepath, inputParameters, parent_level=2):
+def read_medpc(filepath, params={}, parent_level=0):
     path = Path(filepath)
-    extracted_path = path.parents[parent_level]
-    path_to_save = os.path.join(extracted_path, 'extracted_data')
+    path_to_save = path.parents[parent_level]
+    # path_to_save = os.path.join(extracted_path, 'extracted_data')
 
     res = OrderedDict()
 
-    print(filepath)
     with open(filepath, "r") as in_file:
         line = in_file.readlines()
 
@@ -116,10 +115,10 @@ def readMEDPC(filepath, inputParameters, parent_level=2):
     for i in range(1, len(location)):
         j = location[i-1]
         while j >= location[i-1] and j < location[i]:
-            key, value, index = stripLine(line, j, inputParameters)
+            key, value, index = stripLine(line, j, params)
             res[key] = value
             j = index
 
         df = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in res.items()]))
-        df.to_feather(os.path.join(
-            path_to_save, res["Subject"]+"_"+res["Start Date"].replace("/", "_")+".feather"))
+        df.to_csv(os.path.join(
+            path_to_save, res["Subject"]+"_"+res["Start Date"].replace("/", "_")+".csv"))
