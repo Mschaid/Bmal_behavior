@@ -1,6 +1,7 @@
 # %%
-from gettext import find
+
 import pickle
+from unittest import TestSuite
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -24,7 +25,7 @@ parameters_path = obt.list_subdirs(r"R:\Mike\BMAL_\parameter_files")
 
 # create list of all med files to be read
 files = obt.list_subdirs(raw_data_path)
-
+# %%
 for f in files:  # read all med files with empty parameter file and save as feather files
     obt.read_medpc(f)
 
@@ -98,16 +99,16 @@ read_files_csv = [f for f in read_files if f.endswith('csv')]
 for f in read_files_csv:
     rename_params(f)
 
-
 # %%
 
 
-def clean_fr(path):
+def find_param(params: list, regex: str,) -> str:
+    for i in params:
+        if re.match(regex, i):
+            return i
 
-    def find_param(params: list, regex: str,) -> str:
-        for i in params:
-            if re.match(regex, i):
-                return i
+
+def clean_fr(path):
 
     def get_protocol_features(protcocol: str, split_by='_| ') -> tuple:
         program_features = re.split(split_by, protcocol)
@@ -141,18 +142,40 @@ def clean_fr(path):
     return df
 
 
+def clean_pr(path):
+
+    def get_side(protcocol: str, split_by='_| ', ) -> str:
+        program_features = re.split(split_by, protcocol)
+        side = find_param(program_features, regex='[Rr]ight|[Ll]eft')
+        return side
+
+    cols = ['End Date', 'Subject', 'MSN',
+            'total_nosepokes', 'correct_nosepokes', 'incorrect_nosepokes',
+            'total_rewards', 'percent_correct', 'percent_incorrect',
+            'break_point', 'port_entries', ]
+    df = pd.read_csv(path)
+    df = (
+        df[cols]
+        .rename(columns={'End Date': 'date', 'Subject': 'mouse_id', 'MSN': 'program'})
+        .rename(columns=lambda c: c.lower())
+        .assign(protcol='PR',
+                side=get_side(df['MSN'][0])
+                )
+        .dropna()
+    )
+    return df
+
+
 # %%
-test_path = r"R:\Mike\BMAL_\test\raw_data\1_07_28_22.csv"
-test_df = clean_fr(test_path)
-test_df
-# %%
-"""TODO: Clean function is working. Next, 
-* write clean PR function
+"""TODO: 
 * loop through read_csvs
 * segreate by FR or Progressive Ratio
 * apply clean FR or clean PR function and append to list
 * concat lists as master dataframe
 * save master CSV to aggregated data directory
-
-
 """
+
+
+# %%
+
+# %%
